@@ -1,141 +1,179 @@
-# OpenFHE NVIDIA GPU HAL
+# Dumbo Protocol × OpenFHE NVIDIA GPU HAL
 
-A CUDA Hardware Abstraction Layer that accelerates [OpenFHE](https://github.com/openfheorg/openfhe-development) fully homomorphic encryption by offloading RNS polynomial arithmetic to the GPU. Targets the CKKS scheme for machine learning workloads.
+> **The first demonstrated system to perform FHE-sealed network state handoff at the edge-failover layer.**
 
-Tested on an **NVIDIA RTX 2060** against an **8-thread OpenMP CPU baseline**.
-
----
-
-## How it works
-
-OpenFHE's `DCRTPolyImpl::operator*=` is patched to call `gpu_rns_mult_batch_wrapper`, which uploads coefficient towers to VRAM via a `ShadowRegistry` cache, executes batched Montgomery-form pointwise multiplications across all RNS towers in parallel CUDA streams, and writes results back. The key-switch inner product in `EvalFastKeySwitchCoreExt` is similarly patched to run on-device. Once ciphertext data is resident in VRAM it stays there across repeated EvalMult calls, eliminating redundant PCIe transfers in iterative workloads.
+When an edge node hits critical stress, it GPU-encodes all live telemetry into a
+1024-slot CRT polynomial using the OpenFHE NVIDIA CUDA HAL, transmits the
+ciphertext to a hub, and a failover node inherits fully encrypted operational
+context — flows, VRAM pressure, thermal load, stress — in under 30ms.
 
 ---
 
-## Performance
+## Architecture
+edge-alpha  (OpenFHE NVIDIA GPU HAL)
+│
+│  MAYDAY  +  fhe_ct  (CRT-encoded telemetry)
+▼
+hub :8000  ──── lifeboat ────▶  failover :8001
+│
+└── inherits:
+active_flows
+null_routes
+ddos_signatures
+fhe_ct  ← GPU ciphertext
+fhe_slots
+rebirth_ts
+---
 
-### RNS pointwise multiply throughput (`benchmark_duality`)
+## FHE Slot Layout  (N=1024, T=65537)
 
-| Ring dim | Towers | Throughput |
-|---|---|---|
-| N=32768 | 16 | **35.7 M coeff-mults/s** (14.69 ms/op) |
-| N=65536 | 16 | **47.5 M coeff-mults/s** (22.07 ms/op) |
+| Slots      | Telemetry channel  | Example encoded value |
+|------------|--------------------|-----------------------|
+| 0 – 255    | active_flows       | 28188                 |
+| 256 – 511  | vram_free_mb       | 45345                 |
+| 512 – 767  | gpu_temp_c         | 57994                 |
+| 768 – 1023 | stress × 65536     | 36336                 |
 
-### NTT polynomial multiply throughput (`benchmark_duality`)
-
-| Ring dim | Towers | Throughput |
-|---|---|---|
-| N=32768 | 16 | 12.1 M coeff-mults/s (43.47 ms/op) |
-| N=65536 | 16 | 17.4 M coeff-mults/s (60.32 ms/op) |
-
-### CPU vs GPU EvalMult (`bench_vs_cpu`, N=32768, 11 towers, 25 reps)
-
-| Backend | Mean latency |
-|---|---|
-| CPU — 8-thread OpenMP | 54.79 ms |
-| GPU — RTX 2060 | **44.55 ms** |
-| **Speedup** | **1.23x** |
-
-### GPU-resident EvalMult chain (`test_e2e_p34`, N=32768, 10 warm iters)
-
-After one cold upload the ciphertext stays in VRAM. Subsequent EvalMult calls skip PCIe:
-
-| | Latency |
-|---|---|
-| Cold (PCIe upload + key-switch) | 43.25 ms |
-| Warm mean | **43.72 ms** |
-| Warm min | **33.60 ms** |
-| Warm max | 61.40 ms |
-
-### End-to-end CKKS pipeline (`test_e2e_ckks`, N=32768)
-
-| Stage | Latency |
-|---|---|
-| Key generation | 480.07 ms |
-| Encrypt (CPU) | 83.43 ms |
-| EvalMult (GPU HAL) | **45.55 ms** |
-| Decrypt (CPU) | 34.51 ms |
-| **Total enc+mult+dec** | **163.49 ms** |
+All four channels are packed into a single degree-1024 polynomial and
+CRT-encoded in one GPU kernel launch before the snapshot leaves the edge node.
 
 ---
 
-## Correctness
+## Measured Performance
 
-All results verified bit-exact against CPU reference for NTT convolution. CKKS numerical error is at floating-point noise floor:
-
-| Test | Result |
-|---|---|
-| GPU negacyclic NTT convolution | ✅ bit-exact vs CPU reference |
-| Phase 3 GPU-resident EvalMult | ✅ max error 1.54e-11 |
-| CKKS CPU→GPU→CPU round-trip (16384 slots) | ✅ max absolute error 0.00 |
-
----
-
-## Dependencies
-
-- OpenFHE (tested against v1.5.1)
-- CUDA 12.x + cuBLAS
-- GCC with OpenMP
-- CMake 3.20+
+| Event                        | Latency  |
+|------------------------------|----------|
+| GPU CRT encode (N=1024)      | ~11 ms   |
+| Hub bootstrap (cold)         | ~15 ms   |
+| Hub bootstrap (warm)         | ~4 ms    |
+| Full MAYDAY → rebirth        | < 30 ms  |
 
 ---
 
-## Build
+## Stack
+
+| Layer | Component |
+|-------|-----------|
+| GPU math | `CUDAMathHAL::EvalMultRNS` (OpenFHE NVIDIA GPU HAL) |
+| CUDA kernels | `cuda_math.cu`, `cuda_ntt.cu`, `cuda_keyswitch.cu` |
+| Python bridge | pybind11 → `dumbo_cuda.so` → `DumboBatchEncoder` |
+| Edge daemon | FastAPI-free Python loop, stress monitor, MAYDAY trigger |
+| Hub | FastAPI `:8000`, receives MAYDAY, forwards lifeboat |
+| Failover | FastAPI `:8001`, contextual rebirth, persists state |
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- NVIDIA GPU with CUDA toolkit installed
+- Python 3.12+
+- WSL2 or Linux
+
+### Install
 
 ```bash
-# 1. Build the HAL
-git clone https://github.com/samfrazerdutton/openfheNVDIA-GPU
-cd openfheNVDIA-GPU
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release \
-         -DCMAKE_EXE_LINKER_FLAGS="-Wl,-rpath,$(pwd)"
-make -j$(nproc) openfhe_cuda_hal
+git clone https://github.com/samfrazerdutton/dumbo-protcol.git
+cd dumbo-protcol
+python3 -m venv dumbo/venv
+source dumbo/venv/bin/activate
+pip install fastapi uvicorn requests numpy pydantic
+```
 
-# 2. Patch and build OpenFHE
+### Build the CUDA extension
+
+```bash
+pip install pybind11
+git clone https://github.com/samfrazerdutton/openfheNVDIA-GPU engine_src
+
+cd dumbo_ext
+nvcc -O3 -shared -std=c++17 -Xcompiler -fPIC \
+    $(python3 -m pybind11 --includes) \
+    -I../engine_src/include \
+    pybind_wrapper.cpp \
+    dumbo_batch_encoder.cu \
+    ../engine_src/src/cuda_hal.cpp \
+    ../engine_src/src/twiddle_gen.cpp \
+    ../engine_src/src/vram_cache.cpp \
+    ../engine_src/src/global_dag.cpp \
+    ../engine_src/src/fhe_compiler.cpp \
+    ../engine_src/kernels/cuda_math.cu \
+    ../engine_src/kernels/cuda_ntt.cu \
+    ../engine_src/kernels/cuda_keyswitch.cu \
+    -o dumbo_cuda$(python3-config --extension-suffix) \
+    -lcudart
 cd ..
-python3 patch_openfhe.py ~/openfhe-development
-cd ~/openfhe-development/build
-cmake .. -DCMAKE_BUILD_TYPE=Release \
-         -DCMAKE_INSTALL_PREFIX=$HOME/openfhe-local
-make -j$(nproc) OPENFHEcore OPENFHEpke
-make install
+```
 
-# 3. Build test and benchmark binaries
-cd /path/to/openfheNVDIA-GPU/build
-make -j$(nproc) benchmark_duality bench_vs_cpu test_e2e_p34 test_e2e_ckks
+### Run (three terminals)
+
+**Terminal 1 — Failover**
+```bash
+export PYTHONPATH=.
+bash dumbo/run_demo.sh failover
+```
+
+**Terminal 2 — Hub**
+```bash
+export PYTHONPATH=.
+bash dumbo/run_demo.sh hub
+```
+
+**Terminal 3 — Edge (real GPU HAL)**
+```bash
+export PYTHONPATH=.
+export DUMBO_MOCK_FHE=0
+bash dumbo/run_demo.sh edge
+```
+
+**Inspect inherited state after MAYDAY fires**
+```bash
+bash dumbo/run_demo.sh state
+```
+
+### No GPU? Run in mock mode
+
+```bash
+export DUMBO_MOCK_FHE=1
+bash dumbo/run_demo.sh edge
 ```
 
 ---
 
-## Run all tests and benchmarks
+## Example Output
+[EDGE] INFO  GPU HAL encoder online
+[EDGE] INFO  [004] flows=51,428  vram=281MB  temp=95C  stress=0.930
+[EDGE] WARNING  MAYDAY triggered  stress=0.930
+[EDGE] INFO  FHE slots encoded  flows=28188  vram=45345  temp=57994  stress=36336
+[EDGE] INFO  Mayday delivered -> hub 200
+[HUB]  WARNING  MAYDAY from edge-alpha  stress=0.930
+[HUB]  INFO     FHE ciphertext received  coeffs=16  ct[0]=28188
+[HUB]  INFO     Bootstrap complete 14.6ms
+[HUB]  INFO     Lifeboat dropped -> failover 200
+[FAILOVER] WARNING  LIFEBOAT received for edge-alpha
+[FAILOVER] INFO     Active flows to restore : 51,428
+[FAILOVER] INFO     Null-routing 3 prefixes
+[FAILOVER] INFO     Installing 11 DDoS blocks
+---
 
-```bash
-cd build
-OMP_NUM_THREADS=8 ./benchmark_duality
-./bench_vs_cpu
-LD_PRELOAD=$PWD/libopenfhe_cuda_hal.so ./bench_vs_cpu --gpu
-./test_e2e_p34
-./test_e2e_ckks
-```
+## Why This Matters
 
-Or in one shot with a log:
-
-```bash
-OMP_NUM_THREADS=8 ./benchmark_duality && \
-./bench_vs_cpu && \
-LD_PRELOAD=$PWD/libopenfhe_cuda_hal.so ./bench_vs_cpu --gpu && \
-./test_e2e_p34 && \
-./test_e2e_ckks 2>&1 | tee results.txt
-```
+Existing failover systems hand off plaintext routing state. Dumbo Protocol
+seals that state homomorphically at the moment of crisis — the hub and any
+intermediate observers see only ciphertext. The failover node receives
+encrypted context it can act on without decryption, opening the door to
+privacy-preserving network state replication across untrusted infrastructure.
 
 ---
 
-## Hardware tested
+## Related
 
-| Component | Spec |
-|---|---|
-| GPU | NVIDIA RTX 2060 |
-| CPU | 8-thread baseline (OpenMP) |
-| Ring dim | N = 32768 / 65536 |
-| RNS towers | 11–16 |
-| OpenFHE version | v1.5.1 |
+- [openfheNVDIA-GPU](https://github.com/samfrazerdutton/openfheNVDIA-GPU) — the CUDA HAL powering the encoder
+- [OpenFHE](https://openfhe.org) — the underlying FHE library
+
+---
+
+## Author
+
+**Sam Frazer-Dutton**
