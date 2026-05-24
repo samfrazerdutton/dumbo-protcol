@@ -1,0 +1,15 @@
+2026-05-24 13:28:24,314 [FAILOVER] WARNING LIFEBOAT received for edge-alpha
+2026-05-24 13:28:24,315 [FAILOVER] INFO =======================================================
+2026-05-24 13:28:24,315 [FAILOVER] INFO CONTEXTUAL REBIRTH -- inherited routing state:
+2026-05-24 13:28:24,316 [FAILOVER] INFO   Active flows to restore : 40,646
+2026-05-24 13:28:24,316 [FAILOVER] INFO   Null-routing 3 prefixes
+2026-05-24 13:28:24,317 [FAILOVER] INFO     ip route add blackhole 8.96.159.0/24
+2026-05-24 13:28:24,317 [FAILOVER] INFO     ip route add blackhole 96.96.158.0/24
+2026-05-24 13:28:24,317 [FAILOVER] INFO     ip route add blackhole 158.158.161.0/24
+2026-05-24 13:28:24,318 [FAILOVER] INFO   Installing 11 DDoS blocks
+2026-05-24 13:28:24,318 [FAILOVER] INFO     iptables -I INPUT -s SRC_204.0 -j DROP
+2026-05-24 13:28:24,319 [FAILOVER] INFO     iptables -I INPUT -s SRC_54.156 -j DROP
+2026-05-24 13:28:24,319 [FAILOVER] INFO     iptables -I INPUT -s SRC_222.171 -j DROP
+2026-05-24 13:28:24,320 [FAILOVER] INFO     iptables -I INPUT -s SRC_58.2 -j DROP
+2026-05-24 13:28:24,320 [FAILOVER] INFO     iptables -I INPUT -s SRC_76.72 -j DROP
+2026-05-24 13:28:24,321 [FAILOVER] INFO =======================================================

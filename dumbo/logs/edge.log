@@ -1,0 +1,24 @@
+2026-05-24 13:27:45,331 [EDGE] INFO Edge daemon started  node=edge-alpha  hub=http://127.0.0.1:8000
+2026-05-24 13:27:45,332 [EDGE] INFO [000] flows=21,755  vram=275MB  temp=86C  stress=0.574
+2026-05-24 13:27:47,333 [EDGE] INFO [001] flows=36,356  vram=234MB  temp=88C  stress=0.655
+2026-05-24 13:27:49,334 [EDGE] INFO [002] flows=14,262  vram=259MB  temp=94C  stress=0.535
+2026-05-24 13:27:51,335 [EDGE] INFO [003] flows=60,050  vram=61MB  temp=80C  stress=0.710
+2026-05-24 13:27:53,336 [EDGE] INFO [004] flows=66,695  vram=458MB  temp=79C  stress=0.302
+2026-05-24 13:27:55,337 [EDGE] INFO [005] flows=68,216  vram=212MB  temp=78C  stress=0.464
+2026-05-24 13:27:57,338 [EDGE] INFO [006] flows=38,359  vram=41MB  temp=94C  stress=0.849
+2026-05-24 13:27:59,340 [EDGE] INFO [007] flows=33,005  vram=121MB  temp=93C  stress=0.743
+2026-05-24 13:28:01,340 [EDGE] INFO [008] flows=58,855  vram=455MB  temp=81C  stress=0.352
+2026-05-24 13:28:03,341 [EDGE] INFO [009] flows=20,179  vram=53MB  temp=79C  stress=0.595
+2026-05-24 13:28:05,342 [EDGE] INFO [010] flows=35,063  vram=445MB  temp=78C  stress=0.207
+2026-05-24 13:28:07,343 [EDGE] INFO [011] flows=41,247  vram=358MB  temp=86C  stress=0.379
+2026-05-24 13:28:09,344 [EDGE] INFO [012] flows=54,543  vram=404MB  temp=94C  stress=0.552
+2026-05-24 13:28:11,345 [EDGE] INFO [013] flows=30,545  vram=256MB  temp=74C  stress=0.381
+2026-05-24 13:28:13,346 [EDGE] INFO [014] flows=11,150  vram=383MB  temp=89C  stress=0.499
+2026-05-24 13:28:17,575 [EDGE] INFO [015] flows=77,198  vram=435MB  temp=91C  stress=0.506
+2026-05-24 13:28:19,576 [EDGE] INFO [016] flows=74,557  vram=31MB  temp=80C  stress=0.611
+2026-05-24 13:28:21,579 [EDGE] INFO [017] flows=37,791  vram=413MB  temp=71C  stress=0.165
+2026-05-24 13:28:23,580 [EDGE] INFO [018] flows=40,953  vram=39MB  temp=90C  stress=0.892
+2026-05-24 13:28:23,580 [EDGE] WARNING MAYDAY triggered  stress=0.892
+2026-05-24 13:28:23,675 [EDGE] INFO Snapshot saved -> /mnt/c/Users/samca/openfhenvdia-gpu/dumbo/edge/../state/edge-alpha_mayday_1779647303.json
+2026-05-24 13:28:24,328 [EDGE] INFO Mayday delivered -> hub 200
+2026-05-24 13:28:24,328 [EDGE] CRITICAL Edge node controlled shutdown.
