@@ -1,8 +1,8 @@
-build/
-*.so
-gpu_engine
-fhe_venv/
+dumbo/venv/
+dumbo_ext/*.so
+dumbo_ext/*.o
+engine_src/
 __pycache__/
 *.pyc
-*.bak
-*.bak2
+*.pyo
+dumbo/logs/*.log
