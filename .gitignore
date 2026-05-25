@@ -1,7 +1,4 @@
 dumbo/venv/
-dumbo_ext/*.so
-dumbo_ext/*.o
-engine_src/
 __pycache__/
 *.pyc
 *.pyo

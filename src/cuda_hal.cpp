@@ -178,3 +178,8 @@ extern "C" void gpu_prepare_for_decrypt() {
 thread_local bool gpu_evalmult_enabled = true;
 extern "C" void gpu_disable_for_decrypt() { gpu_evalmult_enabled = false; }
 extern "C" void gpu_enable_evalmult()     { gpu_evalmult_enabled = true;  }
+
+extern "C" void gpu_sync_all_to_host() {
+    openfhe_cuda::StreamPool::Instance().SyncAll();
+    cudaDeviceSynchronize();
+}
