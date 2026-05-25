@@ -22,3 +22,57 @@
 2026-05-24 13:28:23,675 [EDGE] INFO Snapshot saved -> /mnt/c/Users/samca/openfhenvdia-gpu/dumbo/edge/../state/edge-alpha_mayday_1779647303.json
 2026-05-24 13:28:24,328 [EDGE] INFO Mayday delivered -> hub 200
 2026-05-24 13:28:24,328 [EDGE] CRITICAL Edge node controlled shutdown.
+2026-05-25 14:34:53,216 [EDGE] INFO GPU HAL encoder online  N=1024 T=65537
+2026-05-25 14:34:53,216 [EDGE] INFO Edge daemon started  node=edge-alpha  hub=http://127.0.0.1:8000  mock=False
+2026-05-25 14:34:53,217 [EDGE] INFO [000] flows=18,632  vram=339MB  temp=94C  stress=0.367
+2026-05-25 14:34:55,217 [EDGE] INFO [001] flows=45,928  vram=337MB  temp=83C  stress=0.636
+2026-05-25 14:34:57,218 [EDGE] INFO [002] flows=21,422  vram=276MB  temp=74C  stress=0.444
+2026-05-25 14:34:59,219 [EDGE] INFO [003] flows=15,492  vram=462MB  temp=74C  stress=0.729
+2026-05-25 14:35:03,036 [EDGE] INFO [004] flows=58,455  vram=138MB  temp=76C  stress=0.706
+2026-05-25 14:35:05,037 [EDGE] INFO [005] flows=30,177  vram=151MB  temp=95C  stress=0.222
+2026-05-25 14:35:07,038 [EDGE] INFO [006] flows=41,423  vram=91MB  temp=86C  stress=0.789
+2026-05-25 14:35:09,039 [EDGE] INFO [007] flows=71,362  vram=336MB  temp=88C  stress=0.32
+2026-05-25 14:35:11,040 [EDGE] INFO [008] flows=59,048  vram=106MB  temp=89C  stress=0.895
+2026-05-25 14:35:11,040 [EDGE] WARNING MAYDAY triggered  stress=0.895
+2026-05-25 14:35:11,052 [EDGE] INFO FHE encoded  mock=False  flows=13090  vram=30585  temp=26304  stress=40618
+2026-05-25 14:35:11,057 [EDGE] INFO Snapshot saved -> /mnt/c/Users/samca/openfhenvdia-gpu/dumbo/edge/../state/edge-alpha_mayday_1779737711.json
+2026-05-25 14:35:11,103 [EDGE] INFO Mayday delivered -> hub 200
+2026-05-25 14:35:11,103 [EDGE] CRITICAL Edge node controlled shutdown.
+2026-05-25 14:39:09,342 [EDGE] INFO GPU HAL encoder online  N=1024 T=65537
+2026-05-25 14:39:09,343 [EDGE] INFO Edge daemon started  node=edge-alpha  hub=http://127.0.0.1:8000  mock=False
+2026-05-25 14:39:09,343 [EDGE] INFO [000] flows=78,090  vram=112MB  temp=88C  stress=0.902
+2026-05-25 14:39:09,344 [EDGE] WARNING MAYDAY triggered  stress=0.902
+2026-05-25 14:39:09,348 [EDGE] INFO FHE encoded  mock=False  flows=50735  vram=32259  temp=36398  stress=14083
+2026-05-25 14:39:09,353 [EDGE] INFO Snapshot saved -> /mnt/c/Users/samca/openfhenvdia-gpu/dumbo/edge/../state/edge-alpha_mayday_1779737949.json
+2026-05-25 14:39:09,359 [EDGE] WARNING Hub unreachable (attempt 1/3): HTTPConnectionPool(host='127.0.0.1', port=8000): Max retries exceeded with url: /mayday (Caused by NewConnectionError("HTTPConnection(host='127.0.0.1', port=8000): Failed to establish a new connection: [Errno 111] Connection refused"))
+2026-05-25 14:39:10,396 [EDGE] INFO Mayday delivered -> hub 200
+2026-05-25 14:39:10,397 [EDGE] CRITICAL Edge node controlled shutdown.
+2026-05-25 14:41:10,664 [EDGE] INFO GPU HAL encoder online  N=1024 T=65537
+2026-05-25 14:41:10,665 [EDGE] INFO Edge daemon started  node=edge-alpha  hub=http://127.0.0.1:8000  mock=False
+2026-05-25 14:41:10,666 [EDGE] INFO [000] flows=47,262  vram=337MB  temp=94C  stress=0.542
+2026-05-25 14:41:12,666 [EDGE] INFO [001] flows=10,562  vram=447MB  temp=88C  stress=0.632
+2026-05-25 14:41:16,673 [EDGE] INFO [002] flows=68,471  vram=119MB  temp=89C  stress=0.107
+2026-05-25 14:41:18,674 [EDGE] INFO [003] flows=13,370  vram=235MB  temp=77C  stress=0.932
+2026-05-25 14:41:18,675 [EDGE] WARNING MAYDAY triggered  stress=0.932
+2026-05-25 14:41:18,686 [EDGE] INFO FHE encoded  mock=False  flows=2306  vram=22284  temp=36975  stress=32242
+2026-05-25 14:41:18,691 [EDGE] INFO Snapshot saved -> /mnt/c/Users/samca/openfhenvdia-gpu/dumbo/edge/../state/edge-alpha_mayday_1779738078.json
+2026-05-25 14:41:18,730 [EDGE] INFO Mayday delivered -> hub 200
+2026-05-25 14:41:18,731 [EDGE] CRITICAL Edge node controlled shutdown.
+2026-05-25 14:43:30,451 [EDGE] INFO GPU HAL encoder online  N=1024 T=65537
+2026-05-25 14:43:30,452 [EDGE] INFO Edge daemon started  node=edge-alpha  hub=http://127.0.0.1:8000  mock=False
+2026-05-25 14:43:30,453 [EDGE] INFO [000] flows=42,021  vram=317MB  temp=79C  stress=0.865
+2026-05-25 14:43:30,453 [EDGE] WARNING MAYDAY triggered  stress=0.865
+2026-05-25 14:43:30,457 [EDGE] INFO FHE encoded  mock=False  flows=8392  vram=62703  temp=59599  stress=55053
+2026-05-25 14:43:30,463 [EDGE] INFO Snapshot saved -> /mnt/c/Users/samca/openfhenvdia-gpu/dumbo/edge/../state/edge-alpha_mayday_1779738210.json
+2026-05-25 14:43:30,470 [EDGE] WARNING Hub unreachable (attempt 1/3): HTTPConnectionPool(host='127.0.0.1', port=8000): Max retries exceeded with url: /mayday (Caused by NewConnectionError("HTTPConnection(host='127.0.0.1', port=8000): Failed to establish a new connection: [Errno 111] Connection refused"))
+2026-05-25 14:43:33,503 [EDGE] INFO Mayday delivered -> hub 200
+2026-05-25 14:43:33,504 [EDGE] CRITICAL Edge node controlled shutdown.
+2026-05-25 14:45:25,265 [EDGE] INFO GPU HAL encoder online  N=1024 T=65537
+2026-05-25 14:45:25,265 [EDGE] INFO Edge daemon started  node=edge-alpha  hub=http://127.0.0.1:8000  mock=False
+2026-05-25 14:45:25,266 [EDGE] INFO [000] flows=72,857  vram=249MB  temp=88C  stress=0.882
+2026-05-25 14:45:25,267 [EDGE] WARNING MAYDAY triggered  stress=0.882
+2026-05-25 14:45:25,270 [EDGE] INFO FHE encoded  mock=False  flows=32749  vram=22015  temp=56306  stress=2611
+2026-05-25 14:45:25,276 [EDGE] INFO Snapshot saved -> /mnt/c/Users/samca/openfhenvdia-gpu/dumbo/edge/../state/edge-alpha_mayday_1779738325.json
+2026-05-25 14:45:25,283 [EDGE] WARNING Hub unreachable (attempt 1/3): HTTPConnectionPool(host='127.0.0.1', port=8000): Max retries exceeded with url: /mayday (Caused by NewConnectionError("HTTPConnection(host='127.0.0.1', port=8000): Failed to establish a new connection: [Errno 111] Connection refused"))
+2026-05-25 14:45:26,318 [EDGE] INFO Mayday delivered -> hub 200
+2026-05-25 14:45:26,319 [EDGE] CRITICAL Edge node controlled shutdown.
