@@ -11,7 +11,7 @@ logging.basicConfig(
 )
 log = logging.getLogger("hub")
 
-app = FastAPI(title="Dumbo Hub", version="2.0.0")
+app      = FastAPI(title="Dumbo Hub", version="3.0.0")
 FAILOVER = "http://127.0.0.1:8001"
 _lifeboats: dict = {}
 
@@ -23,26 +23,29 @@ def health():
 
 @app.post("/mayday")
 async def mayday(request: Request):
-    t0 = time.time()
-    body     = await request.json()
-    node_id  = body.get("node_id", "unknown")
-    stress   = body.get("stress", 0)
-    snapshot = body.get("snapshot", {})
-    fhe_ct   = snapshot.get("fhe_ct", [])
-    fhe_mock = snapshot.get("fhe_mock", True)
-    log.warning(f"MAYDAY from {node_id}  stress={stress:.3f}  mock={fhe_mock}")
-    if fhe_ct:
-        log.info(f"FHE ciphertext received  coeffs={len(fhe_ct)}  ct[0]={fhe_ct[0]}")
+    t0   = time.time()
+    body = await request.json()
+
+    node_id = body.get("node_id", "unknown")
+    stress  = body.get("node_stress", 0.0)   # triage only — hub never sees telemetry
+    mode    = body.get("fhe_mode", "unknown")
+
+    log.warning(f"MAYDAY from {node_id}  stress={stress:.3f}  mode={mode}")
+
+    has_ct = "fhe_ct_b64" in body
+    log.info(f"Ciphertext present: {has_ct}  "
+             f"payload_size={len(str(body)):,} chars")
+
+    # Forward the complete body opaque to failover — hub cannot decrypt it
     try:
-        r = requests.post(f"{FAILOVER}/rebirth", json=snapshot, timeout=5)
+        r  = requests.post(f"{FAILOVER}/lifeboat", json=body, timeout=30)
         ms = (time.time() - t0) * 1000
-        log.info(f"Bootstrap complete {ms:.1f}ms")
-        log.info(f"Lifeboat dropped -> failover {r.status_code}")
-        _lifeboats[node_id] = {"ts": time.time(), "stress": stress}
+        log.info(f"Lifeboat dropped -> failover {r.status_code}  {ms:.1f}ms")
+        _lifeboats[node_id] = {"ts": time.time(), "stress": stress, "mode": mode}
+        return {"status": "lifeboat_delivered", "bootstrap_ms": ms}
     except Exception as e:
-        ms = (time.time() - t0) * 1000
         log.warning(f"Failover unreachable: {e}")
-    return {"status": "lifeboat_delivered", "bootstrap_ms": ms}
+        return {"status": "failover_unreachable", "error": str(e)}
 
 
 @app.get("/lifeboats")
