@@ -1,8 +1,6 @@
 """
 Homomorphic threshold evaluator — Polynomial Mode (Verified).
-
-Uses the inverted NTT mixing matrix to recover plaintext from the
-transmitted band-start polynomial coefficients.
+Uses the inverted NTT mixing matrix to recover plaintext.
 """
 
 import logging
@@ -14,7 +12,6 @@ STRESS_THRESHOLD = int(0.85 * 65536) % T  # 55705
 TEMP_THRESHOLD = 90
 
 def fhe_threshold_check(fhe_ct: list, fhe_slots: dict) -> dict:
-    # 1. Extract the 4 transmitted polynomial coefficients
     ct_vals = [
         int(fhe_slots.get("flows_slot0", 0)),
         int(fhe_slots.get("vram_slot256", 0)),
@@ -22,10 +19,8 @@ def fhe_threshold_check(fhe_ct: list, fhe_slots: dict) -> dict:
         int(fhe_slots.get("stress_slot768", 0))
     ]
 
-    # 2. Multiply by M_INV mod T to un-mix the channels
     flows_plain, vram_plain, temp_plain, stress_plain = decode_plains(ct_vals)
 
-    # 3. Evaluate routing thresholds on the recovered plaintext
     stress_critical = stress_plain > STRESS_THRESHOLD
     temp_critical = temp_plain > TEMP_THRESHOLD
 
