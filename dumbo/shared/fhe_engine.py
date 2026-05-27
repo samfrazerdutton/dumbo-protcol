@@ -35,12 +35,16 @@ def _make_cc():
 
 
 def encode_telemetry(flows, vram_mb, temp_c, stress):
-    """Pack telemetry into BFV plaintext slots. All values must be < 32768."""
+    """Pack telemetry into BFV plaintext slots.
+    BFV with T=65537 uses signed encoding: values must be in [0, 32768].
+    flows and vram are taken mod 32768 (max ~32K before wrapping).
+    For production use a larger T or encode flows in two slots.
+    """
     return [
-        int(flows)   % 32768,
+        int(flows)   % 32768,   # NOTE: wraps at 32768 — see docstring
         int(vram_mb) % 32768,
-        int(temp_c)  % 32768,
-        int(stress * 32768),   # stress in [0,1) -> [0, 32767]
+        int(temp_c),            # temp always < 200, safe
+        int(stress * 32768),    # stress in [0,1) -> [0, 32767]
     ] + [0] * (BATCH_SIZE - 4)
 
 
