@@ -1,15 +1,13 @@
 """
 Dumbo FHE Engine — Real BFV mode using OpenFHE.
 
-The secret key is generated once at failover startup and never transmitted.
-The edge encrypts telemetry with the public key.
-The hub forwards the ciphertext without being able to read it.
-The failover decrypts with the secret key.
+T=1376257 is an NTT prime supporting N up to 65536.
+Max safe plaintext value: 688128 (covers all realistic telemetry).
+flows up to 688K, vram up to 688K, temp always < 200, stress*688128.
 
 Key distribution model (demo):
-  - Failover generates keypair on startup, writes pk to a shared state dir
-  - Edge loads pk from that dir before sending MAYDAY
-  - In production this would be a proper PKI exchange
+  Failover generates keypair on startup, writes pk to shared state dir.
+  Edge loads pk before sending MAYDAY.
 """
 
 import os, sys, json, base64, tempfile, logging
@@ -19,9 +17,10 @@ import openfhe
 
 log = logging.getLogger("fhe_engine")
 
-T          = 65537
+T          = 1376257
+HALF_T     = (T - 1) // 2   # 688128 — max safe plaintext value
 BATCH_SIZE = 1024
-KEY_DIR = os.path.join(os.path.dirname(__file__), "../state/keys")
+KEY_DIR    = os.path.join(os.path.dirname(__file__), "../state/keys")
 
 
 def _make_cc():
@@ -36,15 +35,17 @@ def _make_cc():
 
 def encode_telemetry(flows, vram_mb, temp_c, stress):
     """Pack telemetry into BFV plaintext slots.
-    BFV with T=65537 uses signed encoding: values must be in [0, 32768].
-    flows and vram are taken mod 32768 (max ~32K before wrapping).
-    For production use a larger T or encode flows in two slots.
+    T=1376257, HALF_T=688128 — all realistic telemetry fits without wrapping.
+    flows up to 688K, vram up to 688K, temp always safe, stress*HALF_T.
     """
+    assert int(flows)   <= HALF_T, f"flows {flows} exceeds HALF_T {HALF_T}"
+    assert int(vram_mb) <= HALF_T, f"vram {vram_mb} exceeds HALF_T {HALF_T}"
+    assert int(temp_c)  <= HALF_T, f"temp {temp_c} exceeds HALF_T {HALF_T}"
     return [
-        int(flows)   % 32768,   # NOTE: wraps at 32768 — see docstring
-        int(vram_mb) % 32768,
-        int(temp_c),            # temp always < 200, safe
-        int(stress * 32768),    # stress in [0,1) -> [0, 32767]
+        int(flows),
+        int(vram_mb),
+        int(temp_c),
+        int(stress * HALF_T),
     ] + [0] * (BATCH_SIZE - 4)
 
 
@@ -54,28 +55,21 @@ def decode_telemetry(vals):
         "flows":   vals[0],
         "vram_mb": vals[1],
         "temp_c":  vals[2],
-        "stress":  vals[3] / 32768.0,
+        "stress":  vals[3] / HALF_T,
     }
 
 
 class FailoverKeyHolder:
-    """
-    Runs on the failover node.
-    Generates keypair, persists public key for the edge to load.
-    Holds secret key in memory only — never written to disk in prod.
-    """
     def __init__(self):
         os.makedirs(KEY_DIR, exist_ok=True)
         self.cc   = _make_cc()
         self.keys = self.cc.KeyGen()
-        # Write public key and cc params so edge can encrypt
         openfhe.SerializeToFile(KEY_DIR + "/cc.json", self.cc, openfhe.JSON)
         openfhe.SerializeToFile(KEY_DIR + "/pk.json", self.keys.publicKey, openfhe.JSON)
-        log.info(f"[FHE] Keypair generated. Public key written to {KEY_DIR}")
+        log.info(f"[FHE] Keypair generated (T={T}). Public key -> {KEY_DIR}")
         log.info("[FHE] Secret key held in memory only.")
 
     def decrypt(self, ct_b64: str) -> dict:
-        """Decrypt a base64-encoded serialized ciphertext. Returns telemetry dict."""
         ct_bytes = base64.b64decode(ct_b64)
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             f.write(ct_bytes)
@@ -93,11 +87,6 @@ class FailoverKeyHolder:
 
 
 class EdgeEncryptor:
-    """
-    Runs on the edge node.
-    Loads the public key written by FailoverKeyHolder.
-    Encrypts telemetry — never sees or holds the secret key.
-    """
     def __init__(self):
         if not os.path.exists(KEY_DIR + "/pk.json"):
             raise RuntimeError(
@@ -110,10 +99,9 @@ class EdgeEncryptor:
         self.pk, ok2 = openfhe.DeserializePublicKey(KEY_DIR + "/pk.json", openfhe.JSON)
         if not ok2:
             raise RuntimeError("Failed to load public key")
-        log.info("[FHE] Edge loaded public key. Telemetry will be BFV-encrypted.")
+        log.info(f"[FHE] Edge loaded public key (T={T}). Encrypting telemetry.")
 
     def encrypt(self, flows, vram_mb, temp_c, stress) -> str:
-        """Encrypt telemetry. Returns base64 string safe for JSON transmission."""
         slots  = encode_telemetry(flows, vram_mb, temp_c, stress)
         pt     = self.cc.MakePackedPlaintext(slots)
         ct     = self.cc.Encrypt(self.pk, pt)
